@@ -22,5 +22,8 @@
   },
   "bugs": {
     "url": "https://github.com/catahoc/json-comparer/issues"
+  },
+  "dependencies": {
+    "create-react-app": "^3.4.1"
   }
 }
