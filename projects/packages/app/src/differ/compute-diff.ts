@@ -97,6 +97,8 @@ export const computeDiff = (a: any, b: any): Diff => {
     const bmodel = getObjectModel(b);
     let aix = 0, bix = 0;
     const renderA = ({skipFirst}: {skipFirst: boolean}) => {
+        const startIndent = amodel[aix].indent;
+        const noClosing = amodel[aix].type === 'define';
         while (true) {
             if (!skipFirst) {
                 lines.push(left(amodel[aix]))
@@ -104,7 +106,7 @@ export const computeDiff = (a: any, b: any): Diff => {
                 skipFirst = false;
             }
 
-            if (amodel[aix + 1].indent === amodel[aix].indent) {
+            if (amodel.length - 1 === aix || amodel[aix + 1].indent === startIndent) {
                 break;
             } else {
                 aix++;
@@ -112,6 +114,7 @@ export const computeDiff = (a: any, b: any): Diff => {
         }
     }
     const renderB = ({skipFirst}: {skipFirst: boolean}) => {
+        const startIndent = bmodel[bix].indent;
         while (true) {
             if (!skipFirst) {
                 lines.push(right(bmodel[bix]));
@@ -119,7 +122,7 @@ export const computeDiff = (a: any, b: any): Diff => {
                 skipFirst = false;
             }
 
-            if (bmodel[bix + 1].indent === bmodel[bix].indent) {
+            if (bmodel.length - 1 === bix || bmodel[bix + 1].indent === startIndent) {
                 break;
             } else {
                 bix++;
@@ -157,14 +160,13 @@ export const computeDiff = (a: any, b: any): Diff => {
                 aix++;
                 bix++;
             } else {
+                lines.push(different(a, b));
                 if (a.type === 'define') {
                     // diff
-                    lines.push(different(a, b));
                     renderB({skipFirst: true});
                     aix++;
                 } else {
                     // diff
-                    lines.push(different(a, b));
                     renderA({skipFirst: true});
                     bix++;
                 }
