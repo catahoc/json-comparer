@@ -129,7 +129,7 @@ export const computeDiff = (a: any, b: any): Diff => {
         if (!aline.prop || !bline.prop) {
             lines.push(same(aline));
             advanceBoth();
-        } else if (aline.prop != bline.prop) {
+        } else if (aline.prop !== bline.prop) {
             if (aline.prop > bline.prop) {
                 rightAdvancer.getOnlyLines().forEach(x => lines.push(right(x)));
                 leftAdvancer.getOnlyLines().forEach(x => lines.push(left(x)));

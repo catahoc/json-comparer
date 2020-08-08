@@ -13,3 +13,5 @@ export type LinePair =
 export type Diff = {
     lines: LinePair[];
 }
+
+export const emptyDiff: Diff = {lines: []};

@@ -1,0 +1,36 @@
+html {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+    height: 100%;
+}
+
+.root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.root .input-container {
+    display: flex;
+    flex-direction: row;
+    flex: 1 0 0;
+}
+
+.root .input-container .input-area {
+    flex: 1 0 0;
+}
+
+.root .output-container {
+    display: flex;
+    flex-direction: row;
+    flex: 1 0 0;
+}
+
+.diff {
+
+}
