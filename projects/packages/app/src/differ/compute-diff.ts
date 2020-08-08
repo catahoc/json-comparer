@@ -1,17 +1,4 @@
-import {Diff, LineModel, LinePair, missingLine, Side} from "../diff/line";
-/*
-{           // nest0__{
-  "a": 1,   // nest1_a
-  "b": {    // nest1_b
-    "c": 3, // nest1_b
-    "d": 4  //
-  }         // nest1_
-}           // nest0__}
-* */
-interface LiteralLine {
-    key: string;
-    text: string;
-}
+import {Diff, LineModel, LinePair} from "../diff/line";
 
 const same = (line: LineModel): LinePair => {
     return {type: 'same', line};
@@ -32,9 +19,9 @@ const renderValue = (value: any) => {
     } else if (value === true) {
         return 'true';
     } else if (value === false) {
-        return 'true';
+        return 'false';
     } else if (value === null) {
-        return 'true';
+        return 'null';
     } else {
         return `${value}`;
     }
@@ -93,86 +80,88 @@ export const renderObjectModel = (model: LineModel[]): string[] => {
 
 export const computeDiff = (a: any, b: any): Diff => {
     const lines: LinePair[] = [];
-    const amodel = getObjectModel(a);
-    const bmodel = getObjectModel(b);
-    let aix = 0, bix = 0;
-    const renderA = ({skipFirst}: {skipFirst: boolean}) => {
-        const startIndent = amodel[aix].indent;
-        const noClosing = amodel[aix].type === 'define';
-        while (true) {
-            if (!skipFirst) {
-                lines.push(left(amodel[aix]))
-            } else {
-                skipFirst = false;
+    const createAdvancer = (obj: any) => {
+        const model = getObjectModel(obj);
+        let index = 0;
+        const getLine = () => model[index];
+        const advance = () => {
+            return ++index < model.length;
+        };
+        const finished = () => {
+            return index >= model.length;
+        };
+        const getOnlyLines = () => {
+            const startLine = getLine();
+            const startIndent = startLine.indent;
+            const noClosing = startLine.type === 'define';
+            if (noClosing) {
+                let define = getLine();
+                advance();
+                return [define];
             }
-
-            if (amodel.length - 1 === aix || amodel[aix + 1].indent === startIndent) {
-                break;
-            } else {
-                aix++;
+            const result: LineModel[] = [];
+            do {
+                result.push(getLine());
             }
+            while (advance() && getLine().indent !== startIndent);
+            result.push(getLine());
+            advance();
+            return result;
+        }
+        return {
+            getLine,
+            advance,
+            getOnlyLines,
+            finished,
         }
     }
-    const renderB = ({skipFirst}: {skipFirst: boolean}) => {
-        const startIndent = bmodel[bix].indent;
-        while (true) {
-            if (!skipFirst) {
-                lines.push(right(bmodel[bix]));
-            } else {
-                skipFirst = false;
-            }
 
-            if (bmodel.length - 1 === bix || bmodel[bix + 1].indent === startIndent) {
-                break;
-            } else {
-                bix++;
-            }
-        }
+    const leftAdvancer = createAdvancer(a);
+    const rightAdvancer = createAdvancer(b);
+    const advanceBoth = () => {
+        leftAdvancer.advance();
+        rightAdvancer.advance();
     }
+
     while (true) {
-        const a = amodel[aix];
-        const b = bmodel[bix];
-        if (!a.prop || !b.prop) {
-            lines.push(same(a));
-            aix++;
-            bix++;
-        } else if (a.prop != b.prop) {
-            if (a.prop > b.prop) {
-                renderB({skipFirst: false});
-                renderA({skipFirst: false});
+        let aline = leftAdvancer.getLine();
+        let bline = rightAdvancer.getLine();
+        if (!aline.prop || !bline.prop) {
+            lines.push(same(aline));
+            advanceBoth();
+        } else if (aline.prop != bline.prop) {
+            if (aline.prop > bline.prop) {
+                rightAdvancer.getOnlyLines().forEach(x => lines.push(right(x)));
+                leftAdvancer.getOnlyLines().forEach(x => lines.push(left(x)));
             } else {
-                renderA({skipFirst: false});
-                renderB({skipFirst: false});
+                leftAdvancer.getOnlyLines().forEach(x => lines.push(left(x)));
+                rightAdvancer.getOnlyLines().forEach(x => lines.push(right(x)));
             }
         } else {
-            if (a.type === 'open' && b.type === 'open') {
+            if (aline.type === 'open' && bline.type === 'open') {
                 // both obj
-                lines.push(same(a));
-                aix++;
-                bix++;
-            } else if (a.type === 'define' && b.type === 'define') {
+                lines.push(same(aline));
+                advanceBoth();
+            } else if (aline.type === 'define' && bline.type === 'define') {
                 // both value
-                if (a.value === b.value) {
-                    lines.push(same(a));
+                if (aline.value === bline.value) {
+                    lines.push(same(aline));
                 } else {
-                    lines.push(different(a, b));
+                    lines.push(different(aline, bline));
                 }
-                aix++;
-                bix++;
+                advanceBoth();
             } else {
-                lines.push(different(a, b));
-                if (a.type === 'define') {
-                    // diff
-                    renderB({skipFirst: true});
-                    aix++;
+                lines.push(different(aline, bline));
+                if (aline.type === 'define') {
+                    rightAdvancer.getOnlyLines().slice(1).forEach(x => lines.push(right(x)));
+                    leftAdvancer.advance();
                 } else {
-                    // diff
-                    renderA({skipFirst: true});
-                    bix++;
+                    leftAdvancer.getOnlyLines().slice(1).forEach(x => lines.push(left(x)));
+                    rightAdvancer.advance();
                 }
             }
         }
-        if (aix >= amodel.length || bix >= bmodel.length) {
+        if (leftAdvancer.finished() || rightAdvancer.finished()) {
             break;
         }
     }

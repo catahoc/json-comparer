@@ -11,20 +11,20 @@ describe("compute diff", () => {
     let lines = diff.lines.map((x) => {
       switch (x.type) {
         case "rightonly":
-          return `${"-".repeat(20)}|${renderLine(x.line).padEnd(20)}`;
+          return `${"X".repeat(20)}${renderLine(x.line).padEnd(20)}`;
         case "leftonly":
-          return `${renderLine(x.line).padEnd(20)}|${"---".padEnd(20)}`;
+          return `${renderLine(x.line).padEnd(20)}${"X".repeat(20)}`;
         case "same":
-          return `${renderLine(x.line).padEnd(20)}|${renderLine(x.line).padEnd(
-              20
+          return `${renderLine(x.line).padEnd(20)}${renderLine(x.line).padEnd(
+            20
           )}`;
         case "different":
-          return `${renderLine(x.left).padEnd(20)}|${renderLine(x.right).padEnd(
-              20
+          return `${renderLine(x.left).padEnd(19)}*${renderLine(x.right).padEnd(
+            20
           )}`;
       }
     });
-    console.log(lines.join('\r\n'));
+    console.log(lines.join("\r\n"));
     return lines;
   };
 
@@ -54,15 +54,15 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": 1            |  \\"a\\": 1            ",
-        "  \\"b\\": 2            |  \\"b\\": 2            ",
-        "  \\"c\\": {            |  \\"c\\": {            ",
-        "    \\"e\\": 3          |    \\"e\\": 3          ",
-        "  }                 |  }                 ",
-        "  \\"d\\": {            |  \\"d\\": {            ",
-        "  }                 |  }                 ",
-        "}                   |}                   ",
+        "{                   {                   ",
+        "  \\"a\\": 1              \\"a\\": 1            ",
+        "  \\"b\\": 2              \\"b\\": 2            ",
+        "  \\"c\\": {              \\"c\\": {            ",
+        "    \\"e\\": 3              \\"e\\": 3          ",
+        "  }                   }                 ",
+        "  \\"d\\": {              \\"d\\": {            ",
+        "  }                   }                 ",
+        "}                   }                   ",
       ]
     `);
   });
@@ -75,9 +75,9 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": 1            |  \\"a\\": 2            ",
-        "}                   |}                   ",
+        "{                   {                   ",
+        "  \\"a\\": 1           *  \\"a\\": 2            ",
+        "}                   }                   ",
       ]
     `);
   });
@@ -90,11 +90,11 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": {            |  \\"a\\": {            ",
-        "    \\"b\\": 1          |    \\"b\\": 2          ",
-        "  }                 |  }                 ",
-        "}                   |}                   ",
+        "{                   {                   ",
+        "  \\"a\\": {              \\"a\\": {            ",
+        "    \\"b\\": 1         *    \\"b\\": 2          ",
+        "  }                   }                 ",
+        "}                   }                   ",
       ]
     `);
   });
@@ -107,14 +107,14 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": {            |---                 ",
-        "    \\"b\\": 1          |---                 ",
-        "--------------------|  \\"b\\": {            ",
-        "--------------------|    \\"b\\": 1          ",
-        "    \\"b\\": 1          |    \\"b\\": 1          ",
-        "  }                 |  }                 ",
-        "}                   |}                   ",
+        "{                   {                   ",
+        "  \\"a\\": {            XXXXXXXXXXXXXXXXXXXX",
+        "    \\"b\\": 1          XXXXXXXXXXXXXXXXXXXX",
+        "  }                 XXXXXXXXXXXXXXXXXXXX",
+        "XXXXXXXXXXXXXXXXXXXX  \\"b\\": {            ",
+        "XXXXXXXXXXXXXXXXXXXX    \\"b\\": 1          ",
+        "XXXXXXXXXXXXXXXXXXXX  }                 ",
+        "}                   }                   ",
       ]
     `);
   });
@@ -127,12 +127,12 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": {            |---                 ",
-        "    \\"b\\": 1          |---                 ",
-        "--------------------|  \\"b\\": 1            ",
-        "--------------------|}                   ",
-        "    \\"b\\": 1          |    \\"b\\": 1          ",
+        "{                   {                   ",
+        "  \\"a\\": {            XXXXXXXXXXXXXXXXXXXX",
+        "    \\"b\\": 1          XXXXXXXXXXXXXXXXXXXX",
+        "  }                 XXXXXXXXXXXXXXXXXXXX",
+        "XXXXXXXXXXXXXXXXXXXX  \\"b\\": 1            ",
+        "}                   }                   ",
       ]
     `);
   });
@@ -145,12 +145,46 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": 2            |---                 ",
-        "}                   |---                 ",
-        "--------------------|  \\"b\\": {            ",
-        "--------------------|    \\"b\\": 1          ",
-        "}                   |}                   ",
+        "{                   {                   ",
+        "  \\"a\\": 2            XXXXXXXXXXXXXXXXXXXX",
+        "XXXXXXXXXXXXXXXXXXXX  \\"b\\": {            ",
+        "XXXXXXXXXXXXXXXXXXXX    \\"b\\": 1          ",
+        "XXXXXXXXXXXXXXXXXXXX  }                 ",
+        "}                   }                   ",
+      ]
+    `);
+  });
+
+  it("Should compare object vs primitive of the same name", () => {
+    const a = { b: { b: 1 } };
+    const b = { b: 1 };
+    const diff = computeDiff(a, b);
+
+    const readable = toReadable(diff);
+    expect(readable).toMatchInlineSnapshot(`
+      Array [
+        "{                   {                   ",
+        "  \\"b\\": {           *  \\"b\\": 1            ",
+        "    \\"b\\": 1          XXXXXXXXXXXXXXXXXXXX",
+        "  }                 XXXXXXXXXXXXXXXXXXXX",
+        "}                   }                   ",
+      ]
+    `);
+  });
+
+  it("Should compare primitive vs object of the same name", () => {
+    const a = { b: 2 };
+    const b = { b: { b: 1 } };
+    const diff = computeDiff(a, b);
+
+    const readable = toReadable(diff);
+    expect(readable).toMatchInlineSnapshot(`
+      Array [
+        "{                   {                   ",
+        "  \\"b\\": 2           *  \\"b\\": {            ",
+        "XXXXXXXXXXXXXXXXXXXX    \\"b\\": 1          ",
+        "XXXXXXXXXXXXXXXXXXXX  }                 ",
+        "}                   }                   ",
       ]
     `);
   });
@@ -163,15 +197,15 @@ describe("compute diff", () => {
     const readable = toReadable(diff);
     expect(readable).toMatchInlineSnapshot(`
       Array [
-        "{                   |{                   ",
-        "  \\"a\\": 1            |  \\"a\\": 2            ",
-        "  \\"b\\": 2            |  \\"b\\": 3            ",
-        "  \\"c\\": true         |  \\"c\\": true         ",
-        "  \\"d\\": true         |  \\"d\\": true         ",
-        "  \\"e\\": true         |  \\"e\\": true         ",
-        "  \\"f\\": 1.2          |  \\"f\\": 1.2          ",
-        "  \\"g\\": \\"xyz\\"        |  \\"g\\": \\"abc\\"        ",
-        "}                   |}                   ",
+        "{                   {                   ",
+        "  \\"a\\": 1           *  \\"a\\": 2            ",
+        "  \\"b\\": 2           *  \\"b\\": 3            ",
+        "  \\"c\\": null        *  \\"c\\": true         ",
+        "  \\"d\\": true        *  \\"d\\": false        ",
+        "  \\"e\\": false       *  \\"e\\": null         ",
+        "  \\"f\\": 1.2            \\"f\\": 1.2          ",
+        "  \\"g\\": \\"xyz\\"       *  \\"g\\": \\"abc\\"        ",
+        "}                   }                   ",
       ]
     `);
   });
