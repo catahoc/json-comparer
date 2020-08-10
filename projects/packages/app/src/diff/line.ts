@@ -3,6 +3,7 @@ export type LineModel = {
     type: 'open'|'close'|'define'|'open_array'|'close_array';
     prop?: string;
     value?: string;
+    last?: boolean;
 }
 export type LinePair =
     | {type: 'same', line: LineModel}
