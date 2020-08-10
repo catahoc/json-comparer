@@ -44,7 +44,7 @@ export const getObjectModel = (root: any): LineModel[] => {
     }
 
     const pushArrayModel = (arr: any[], last: boolean, prop?: string) => {
-        result.push({indent, type: 'open_array', prop});
+        result.push({indent, type: 'open_array', prop, last: true});
         indent++;
         arr.forEach((value, index) => pushValue(value, index === arr.length - 1));
         indent--;
@@ -52,7 +52,7 @@ export const getObjectModel = (root: any): LineModel[] => {
     }
 
     const pushObjectModel = (obj: any, last: boolean, prop?: string) => {
-        result.push({indent, type: 'open', prop});
+        result.push({indent, type: 'open', prop, last: true});
         indent++;
         const props = Array.from(new Set(Object.getOwnPropertyNames(obj))).sort();
         props.forEach((prop, index) => pushValue(obj[prop], index === props.length - 1, prop));
@@ -83,7 +83,7 @@ const renderContent = (x: LineModel) => {
 
 export const renderLine = (x: LineModel) => {
     const indentation = '  '.repeat(x.indent);
-    const ending = x.last ? ',' : '';
+    const ending = x.last ? '' : ',';
     return indentation + renderContent(x) + ending;
 }
 
