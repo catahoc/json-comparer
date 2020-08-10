@@ -203,6 +203,32 @@ describe("compute diff", () => {
     `);
   });
 
+  it("Should compare arrays", () => {
+    const a = [1, 2, { a: 3, b: [{}, {}] }, "xyz"];
+    const b = [1, 2, { a: 3, b: [{}, {}, {}] }, "zyx"];
+    const diff = computeDiff(a, b);
+
+    const readable = toReadable(diff);
+    expect(readable).toMatchInlineSnapshot(`
+      Array [
+        "[                   [                   ",
+        "  1,                  1,                ",
+        "  2,                  2,                ",
+        "  {                   {                 ",
+        "    \\"a\\": 3,             \\"a\\": 3,         ",
+        "    \\"b\\": [         *    \\"b\\": [          ",
+        "      {             XXXXXXXXXXXXXXXXXXXX",
+        "      },            XXXXXXXXXXXXXXXXXXXX",
+        "      {             XXXXXXXXXXXXXXXXXXXX",
+        "      }             XXXXXXXXXXXXXXXXXXXX",
+        "    ]               XXXXXXXXXXXXXXXXXXXX",
+        "  },                  },                ",
+        "  \\"xyz\\"               \\"xyz\\"             ",
+        "]                   ]                   ",
+      ]
+    `);
+  });
+
   it("Should compare different primitives", () => {
     const a = { a: 1, b: 2, c: null, d: true, e: false, f: 1.2, g: "xyz" };
     const b = { a: 2, b: 3, c: true, d: false, e: null, f: 1.2, g: "abc" };
