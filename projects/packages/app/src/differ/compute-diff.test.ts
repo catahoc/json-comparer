@@ -29,10 +29,11 @@ describe("compute diff", () => {
   };
 
   it("Should get object model", () => {
-    const a = { a: 1, b: 2, d: {}, c: { e: 3 } };
+    const a = { a: 1, b: 2, d: {}, c: { e: [1, "abc", { f: 3 }, [], [2.3]] } };
     const model = getObjectModel(a);
 
     const readable = renderObjectModel(model);
+    console.log(readable.join('\r\n'));
     expect(readable).toEqual([
       "{",
       '  "a": 1',

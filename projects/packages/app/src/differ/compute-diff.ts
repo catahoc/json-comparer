@@ -29,48 +29,56 @@ const renderValue = (value: any) => {
 
 export const getObjectModel = (root: any): LineModel[] => {
     const result: LineModel[] = [];
+    let indent = 0;
 
-    const pushObjectModel = (obj: any) => {
-        const props = Array.from(new Set(Object.getOwnPropertyNames(obj))).sort();
-        props.forEach(prop => {
-            const value = obj[prop];
-            const isNull = value == null;
-            const isObject = typeof value === 'object' && !isNull;
-            if (!isObject) {
-                result.push({indent, type: 'define', prop, value: renderValue(value)});
-            } else {
-                result.push({indent, type: 'open', prop});
-                indent++;
-                pushObjectModel(value);
-                indent--;
-                result.push({indent, type: 'close'});
-            }
-        })
+    const pushValue = (value: any, prop?: string) => {
+        const isNull = value == null;
+        const isObject = typeof value === 'object' && !isNull;
+        if (Array.isArray(value)) {
+            pushArrayModel(value, prop);
+        } else if (!isObject) {
+            result.push({indent, type: 'define', value: renderValue(value), prop});
+        } else {
+            pushObjectModel(value, prop);
+        }
     }
 
-    let indent = 0;
-    result.push({indent, type: 'open'});
-    indent++;
-    pushObjectModel(root);
-    indent--;
-    result.push({indent, type: 'close'});
+    const pushArrayModel = (arr: any[], prop?: string) => {
+        result.push({indent, type: 'open_array', prop});
+        indent++;
+        arr.forEach(value => pushValue(value));
+        indent--;
+        result.push({indent, type: 'close_array'});
+    }
+
+    const pushObjectModel = (obj: any, prop?: string) => {
+        result.push({indent, type: 'open', prop});
+        indent++;
+        const props = Array.from(new Set(Object.getOwnPropertyNames(obj))).sort();
+        props.forEach(prop => pushValue(obj[prop], prop));
+        indent--;
+        result.push({indent, type: 'close'});
+    }
+
+    pushValue(root);
 
     return result;
 }
 
 export const renderLine = (x: LineModel) => {
-    const result = '  '.repeat(x.indent);
+    const indentation = '  '.repeat(x.indent);
+    const prop = x.prop ? `"${x.prop}": ` : '';
     switch (x.type) {
         case "open":
-            if (x.prop) {
-                return result + `"${x.prop}": {`;
-            } else {
-                return result + '{';
-            }
+            return indentation + prop + '{';
         case "close":
-            return result + '}';
+            return indentation + '}';
+        case "open_array":
+            return indentation + prop + '[';
+        case "close_array":
+            return indentation + ']';
         case "define":
-            return result + `"${x.prop}": ${x.value}`;
+            return indentation + prop + x.value;
     }
 }
 
