@@ -19,6 +19,13 @@ export const App = React.memo(() => {
         }
 
     }, []);
+    React.useEffect(() => {
+        const example1 = require('./example1.json');
+        const example2 = require('./example2.json');
+        leftRef.current!.value = JSON.stringify(example1, undefined, 2);
+        rightRef.current!.value = JSON.stringify(example2, undefined, 2);
+        change();
+    });
     return <>
         <div className="input-container">
             <textarea className="input-area left-input" ref={leftRef} onChange={change}/>
